@@ -1,0 +1,39 @@
+def list_chains(pdb_text: str):
+    chains, seen = [], set()
+    for ln in pdb_text.splitlines():
+        if ln.startswith(("ATOM", "HETATM")):
+            ch = ln[21].strip() or "A"
+            if ch not in seen:
+                seen.add(ch); chains.append(ch)
+    return chains
+
+def filter_pdb(pdb_text: str, keep_chains=None, first_model_only=True) -> str:
+    keep = set(keep_chains or [])
+    out, in_model, current_model = [], False, 0
+    for ln in pdb_text.splitlines():
+        rec = ln[:6].strip()
+        if rec == "MODEL":
+            in_model = True
+            try: current_model = int(ln[10:14].strip())
+            except Exception: current_model = 1
+            if not first_model_only or current_model == 1:
+                out.append(ln)
+            continue
+        if rec == "ENDMDL":
+            if not first_model_only or current_model == 1:
+                out.append(ln)
+            in_model = False
+            continue
+        if rec in ("ATOM", "HETATM"):
+            if first_model_only and in_model and current_model != 1:
+                continue
+            ch = (ln[21].strip() or "A")
+            if keep and ch not in keep:
+                continue
+            out.append(ln); continue
+        if rec in ("TER", "END", "REMARK", "HEADER", "TITLE", "COMPND", "SOURCE", "EXPDTA"):
+            if not first_model_only or not in_model or current_model == 1:
+                out.append(ln)
+            continue
+        out.append(ln)
+    return "\n".join(out) + "\n"

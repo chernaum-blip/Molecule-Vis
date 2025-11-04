@@ -1,0 +1,4 @@
+with st.spinner(f"Rendering from {source} ..."):
+    view, hbonds, bonded_residues, ss_pairs = render_view(
+        pdb_text_view, cutoff_ang=cutoff, use_tube=use_tube, show_ss=show_disulfides
+    )
